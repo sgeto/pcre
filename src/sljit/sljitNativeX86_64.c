@@ -115,7 +115,7 @@ SLJIT_API_FUNC_ATTRIBUTE sljit_s32 sljit_emit_enter(struct sljit_compiler *compi
 
 		INC_SIZE(size);
 
-#ifndef _WIN64
+#if !defined _WIN64 && !defined __CYGWIN__
 		if (args > 0) {
 			*inst++ = REX_W;
 			*inst++ = MOV_r_rm;
@@ -153,7 +153,7 @@ SLJIT_API_FUNC_ATTRIBUTE sljit_s32 sljit_emit_enter(struct sljit_compiler *compi
 	local_size = ((local_size + SLJIT_LOCALS_OFFSET + saved_register_size + 15) & ~15) - saved_register_size;
 	compiler->local_size = local_size;
 
-#ifdef _WIN64
+#if defined _WIN64 || defined __CYGWIN__
 	if (local_size > 1024) {
 		/* Allocate stack for the callback, which grows the stack. */
 		inst = (sljit_u8*)ensure_buf(compiler, 1 + 4 + (3 + sizeof(sljit_s32)));
@@ -208,7 +208,7 @@ SLJIT_API_FUNC_ATTRIBUTE sljit_s32 sljit_emit_enter(struct sljit_compiler *compi
 		}
 	}
 
-#ifdef _WIN64
+#if defined _WIN64 || defined __CYGWIN__
 	/* Save xmm6 register: movaps [rsp + 0x20], xmm6 */
 	if (fscratches >= 6 || fsaveds >= 1) {
 		inst = (sljit_u8*)ensure_buf(compiler, 1 + 5);
@@ -256,7 +256,7 @@ SLJIT_API_FUNC_ATTRIBUTE sljit_s32 sljit_emit_return(struct sljit_compiler *comp
 
 	FAIL_IF(emit_mov_before_return(compiler, op, src, srcw));
 
-#ifdef _WIN64
+#if defined _WIN64 || defined __CYGWIN__
 	/* Restore xmm6 register: movaps xmm6, [rsp + 0x20] */
 	if (compiler->fscratches >= 6 || compiler->fsaveds >= 1) {
 		inst = (sljit_u8*)ensure_buf(compiler, 1 + 5);
@@ -550,7 +550,7 @@ static sljit_s32 call_with_args(struct sljit_compiler *compiler, sljit_s32 type)
 	sljit_u8 *inst;
 
 	/* After any change update IS_REG_CHANGED_BY_CALL as well. */
-#ifndef _WIN64
+#if !defined _WIN64 && !defined __CYGWIN__
 	SLJIT_ASSERT(reg_map[SLJIT_R1] == 6 && reg_map[SLJIT_R0] < 8 && reg_map[SLJIT_R2] < 8 && reg_map[TMP_REG1] == 2);
 
 	inst = (sljit_u8*)ensure_buf(compiler, 1 + ((type < SLJIT_CALL3) ? 3 : 6));

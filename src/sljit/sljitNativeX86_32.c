@@ -170,7 +170,7 @@ SLJIT_API_FUNC_ATTRIBUTE sljit_s32 sljit_emit_enter(struct sljit_compiler *compi
 
 	compiler->local_size = local_size;
 
-#ifdef _WIN32
+#if defined _WIN32 || defined __CYGWIN__
 	if (local_size > 1024) {
 #if (defined SLJIT_X86_32_FASTCALL && SLJIT_X86_32_FASTCALL)
 		FAIL_IF(emit_do_imm(compiler, MOV_r_i32 + reg_map[SLJIT_R0], local_size));

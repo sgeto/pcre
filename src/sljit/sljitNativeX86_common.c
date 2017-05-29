@@ -89,7 +89,7 @@ static const sljit_u8 reg_map[SLJIT_NUMBER_OF_REGISTERS + 3] = {
 /* Note: r12 & 0x7 == 0b100, which decoded as SIB byte present
    Note: avoid to use r12 and r13 for memory addessing
    therefore r12 is better to be a higher saved register. */
-#ifndef _WIN64
+#if !defined _WIN64 && !defined __CYGWIN__
 /* Args: rdi(=7), rsi(=6), rdx(=2), rcx(=1), r8, r9. Scratches: rax(=0), r10, r11 */
 static const sljit_u8 reg_map[SLJIT_NUMBER_OF_REGISTERS + 4] = {
 	0, 0, 6, 1, 7, 8, 11, 10, 12, 5, 13, 14, 15, 3, 4, 2, 9
@@ -653,7 +653,7 @@ static sljit_s32 emit_mov(struct sljit_compiler *compiler,
 #define EMIT_MOV(compiler, dst, dstw, src, srcw) \
 	FAIL_IF(emit_mov(compiler, dst, dstw, src, srcw));
 
-#ifdef _WIN32
+#if defined _WIN32 || defined __CYGWIN__
 #include <malloc.h>
 
 static void SLJIT_CALL sljit_grow_stack(sljit_sw local_size)
@@ -767,7 +767,7 @@ SLJIT_API_FUNC_ATTRIBUTE sljit_s32 sljit_emit_op0(struct sljit_compiler *compile
 	case SLJIT_DIV_UW:
 	case SLJIT_DIV_SW:
 #if (defined SLJIT_CONFIG_X86_64 && SLJIT_CONFIG_X86_64)
-#ifdef _WIN64
+#if defined _WIN64 || defined __CYGWIN__
 		SLJIT_ASSERT(
 			reg_map[SLJIT_R0] == 0
 			&& reg_map[SLJIT_R1] == 2
@@ -784,7 +784,7 @@ SLJIT_API_FUNC_ATTRIBUTE sljit_s32 sljit_emit_op0(struct sljit_compiler *compile
 
 		op = GET_OPCODE(op);
 		if ((op | 0x2) == SLJIT_DIV_UW) {
-#if (defined SLJIT_CONFIG_X86_32 && SLJIT_CONFIG_X86_32) || defined(_WIN64)
+#if (defined SLJIT_CONFIG_X86_32 && SLJIT_CONFIG_X86_32) || defined(_WIN64) || defined(__CYGWIN__)
 			EMIT_MOV(compiler, TMP_REG1, 0, SLJIT_R1, 0);
 			inst = emit_x86_instruction(compiler, 1, SLJIT_R1, 0, SLJIT_R1, 0);
 #else
@@ -795,7 +795,7 @@ SLJIT_API_FUNC_ATTRIBUTE sljit_s32 sljit_emit_op0(struct sljit_compiler *compile
 		}
 
 		if ((op | 0x2) == SLJIT_DIV_SW) {
-#if (defined SLJIT_CONFIG_X86_32 && SLJIT_CONFIG_X86_32) || defined(_WIN64)
+#if (defined SLJIT_CONFIG_X86_32 && SLJIT_CONFIG_X86_32) || defined(_WIN64) || defined(__CYGWIN__)
 			EMIT_MOV(compiler, TMP_REG1, 0, SLJIT_R1, 0);
 #endif
 
@@ -827,7 +827,7 @@ SLJIT_API_FUNC_ATTRIBUTE sljit_s32 sljit_emit_op0(struct sljit_compiler *compile
 		*inst++ = GROUP_F7;
 		*inst = MOD_REG | ((op >= SLJIT_DIVMOD_UW) ? reg_map[TMP_REG1] : reg_map[SLJIT_R1]);
 #else
-#ifdef _WIN64
+#if defined _WIN64 || defined __CYGWIN__
 		size = (!compiler->mode32 || op >= SLJIT_DIVMOD_UW) ? 3 : 2;
 #else
 		size = (!compiler->mode32) ? 3 : 2;
@@ -835,7 +835,7 @@ SLJIT_API_FUNC_ATTRIBUTE sljit_s32 sljit_emit_op0(struct sljit_compiler *compile
 		inst = (sljit_u8*)ensure_buf(compiler, 1 + size);
 		FAIL_IF(!inst);
 		INC_SIZE(size);
-#ifdef _WIN64
+#if defined _WIN64 || defined __CYGWIN__
 		if (!compiler->mode32)
 			*inst++ = REX_W | ((op >= SLJIT_DIVMOD_UW) ? REX_B : 0);
 		else if (op >= SLJIT_DIVMOD_UW)
@@ -865,7 +865,7 @@ SLJIT_API_FUNC_ATTRIBUTE sljit_s32 sljit_emit_op0(struct sljit_compiler *compile
 			*inst |= IDIV;
 			break;
 		}
-#if (defined SLJIT_CONFIG_X86_64 && SLJIT_CONFIG_X86_64) && !defined(_WIN64)
+#if (defined SLJIT_CONFIG_X86_64 && SLJIT_CONFIG_X86_64) && !defined(_WIN64) && !defined(__CYGWIN__)
 		if (op <= SLJIT_DIVMOD_SW)
 			EMIT_MOV(compiler, SLJIT_R1, 0, TMP_REG1, 0);
 #else
@@ -2535,7 +2535,7 @@ SLJIT_API_FUNC_ATTRIBUTE struct sljit_jump* sljit_emit_jump(struct sljit_compile
 }
 
 #if (defined SLJIT_CONFIG_X86_64 && SLJIT_CONFIG_X86_64)
-#ifndef _WIN64
+#if !defined _WIN64 && !defined __CYGWIN__
 #define IS_REG_CHANGED_BY_CALL(src, type) ((src) == SLJIT_R3)
 #else
 #define IS_REG_CHANGED_BY_CALL(src, type) ((src) == SLJIT_R2)
